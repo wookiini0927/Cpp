@@ -63,7 +63,47 @@ public:
 	}
 	
 	friend Polynome operator+(const Polynome& p1, const Polynome& p2){
-
+		Polynome<T> p_somme;
+	    typename map<int,T>::const_iterator i;
+	    typename map<int,T>::const_iterator j;
+	    i = p1.m_map_coef.begin();
+	    j = p2.m_map_coef.begin();
+	    while (i != p1.m_map_coef.end() && j != p2.m_map_coef.end())
+        {
+            if (i->second == 0 && j->second == 0)
+            {
+                p_somme.m_map_coef[i->first] = 0;
+            }
+            else if (i->second == 0 && j->second != 0)
+            {
+                p_somme.m_map_coef[i->first] = j->second;
+            }
+            else if (i->second != 0 && j->second == 0)
+            {
+                p_somme.m_map_coef[i->first] = i->second;
+            }
+            else
+            {
+                p_somme.m_map_coef[i->first] = i->second + j->second;
+            }
+            i++;
+            j++;
+        }
+        if (i->first < j->first)
+        {
+            for (j; j != p2.m_map_coef.end(); j++)
+            {
+                p_somme.m_map_coef[j->first] = j->second;
+            }
+        }
+        else if (i->first > j->first)
+        {
+            for (i; i != p2.m_map_coef.end(); i++)
+            {
+                p_somme.m_map_coef[i->first] = i->second;
+            }
+        }
+        return p_somme;
 	}
 
 	friend Polynome operator-(const Polynome& p1, const Polynome& p2){
@@ -124,6 +164,7 @@ public:
 		Polynome<T> p_produit;
 		typename map<int,T>::const_iterator i; //iterateur de p1
 		typename map<int,T>::const_iterator j; //iterateur de p2
+
 		for(i=p1.m_map_coef.begin();i!=p1.m_map_coef.end();i++){
 			for(j=p2.m_map_coef.begin();j!=p2.m_map_coef.end();j++){			
 				p_produit.m_map_coef[i->first+j->first] += (i->second*j->second);
@@ -137,7 +178,7 @@ public:
 	Polynome operator+=(const Polynome& p) const;
 	Polynome operator-=(const Polynome& p) {
 		typename map<int,T>::const_iterator i=this->m_map_coef.begin();
-	typename map<int,T>::const_iterator j=p.m_map_coef.begin();
+		typename map<int,T>::const_iterator j=p.m_map_coef.begin();
 
 		while(i!=this->m_map_coef.end() && j!=p.m_map_coef.end()){
 			//Cas ou les deux puissances n'ont pas de coeff
@@ -188,8 +229,42 @@ public:
 		return *this;
 
 	}
-	Polynome operator*=(const Polynome& p) const;
 
+	Polynome operator*=(const Polynome& p) {
+		cout<<"surcharge *="<<endl;
+		map<int,T> tmp_map;
+		typename map<int,T>::const_iterator i; //iterateur de this
+		typename map<int,T>::reverse_iterator fin = m_map_coef.rbegin();
+		typename map<int,T>::const_iterator j; //iterateur de p
+		int last = fin->first;
+
+		for(i= this->m_map_coef.begin(); i!= this->m_map_coef.end(); i++){
+			tmp_map[i->first]=i->second;
+		}
+
+		T tmp =0;
+		cout<<"this : "<<*this<<endl;
+		cout<<"p2 : "<<p<<endl;
+		cout<<"dernier element :"<<last<<endl;
+		for(i=this->m_map_coef.begin();i->first!=last+1;i++){
+			cout<<"this["<<i->first<<"] = "<<tmp_map[i->first];
+			tmp = tmp_map[i->first];
+			for(j=p.m_map_coef.begin();j!=p.m_map_coef.end();j++){
+				if(i->first == 0){			
+					this->m_map_coef[i->first+j->first] = (tmp_map[i->first]*j->second);
+				}
+				else{
+					this->m_map_coef[i->first+j->first] += (tmp_map[i->first]*j->second);
+
+				}
+				
+			}
+
+		}
+
+
+		return *this;
+	}
 
 
 
