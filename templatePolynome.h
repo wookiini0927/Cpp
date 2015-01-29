@@ -29,12 +29,35 @@ public:
 	//Accesseurs
 	map<int,T>& getMap();
 
-	//Mutateurs
-	void setMap(const map<int,T>&);
-
 	//Fonctions
-	T evaluer(T& z);
-	Polynome deriver() ;
+
+	/**
+	* Evalue le polynome a la valeur z
+	*
+	* Param x : valeur que vaudra l'inconnu
+	*
+	* Retourne le resultat du polynome
+	**/
+	T evaluer(T& x);
+
+	/**
+	* Derive le polynome
+	*
+	* retourne la derivee du polynome
+	**/
+	Polynome deriver();
+
+	/**
+	* Fais la division euclidienne de deux polynomes
+	* 
+	* Param p : diviseur de la division
+	*
+	* Retourne le quotient de la division
+	**/
+	Polynome divisionEuclidienne(const Polynome& p) const;
+
+	Polynome composition(Polynome& p2);
+    Polynome puissance(Polynome& p, int i);
 
 	//Surcharge
 	friend ostream& operator<<(ostream& os, const Polynome& p){
@@ -64,13 +87,20 @@ public:
 	
 	friend Polynome operator+(const Polynome& p1, const Polynome& p2){
 		Polynome<T> p_somme;
+
+		typename map<int,T>::const_reverse_iterator i_d=p1.m_map_coef.rbegin(); //recupere le plus haut degre de p1
+		typename map<int,T>::const_reverse_iterator j_d=p2.m_map_coef.rbegin(); //recupere le plus haut degre de p2
+
 	    typename map<int,T>::const_iterator i;
 	    typename map<int,T>::const_iterator j;
 	    i = p1.m_map_coef.begin();
 	    j = p2.m_map_coef.begin();
+
+	    if(i_d->first == j_d->first){
+
 	    while (i != p1.m_map_coef.end() && j != p2.m_map_coef.end())
         {
-            if (i->second == 0 && j->second == 0)
+           	if (i->second == 0 && j->second == 0)
             {
                 p_somme.m_map_coef[i->first] = 0;
             }
@@ -88,17 +118,21 @@ public:
             }
             i++;
             j++;
+
+            cout<<i->first<<","<<j->first<<endl;
         }
-        if (i->first < j->first)
+    }
+
+        if (i->first-1 < j->first-1)
         {
-            for (j; j != p2.m_map_coef.end(); j++)
+            for (;j != p2.m_map_coef.end(); j++)
             {
                 p_somme.m_map_coef[j->first] = j->second;
             }
         }
-        else if (i->first > j->first)
+        else if (i->first-1 > j->first-1)
         {
-            for (i; i != p2.m_map_coef.end(); i++)
+            for (;i != p2.m_map_coef.end(); i++)
             {
                 p_somme.m_map_coef[i->first] = i->second;
             }
@@ -106,53 +140,86 @@ public:
         return p_somme;
 	}
 
+
 	friend Polynome operator-(const Polynome& p1, const Polynome& p2){
 		Polynome<T> p_difference;
+		typename map<int,T>::const_reverse_iterator i_d=p1.m_map_coef.rbegin();
+		typename map<int,T>::const_reverse_iterator j_d=p2.m_map_coef.rbegin();
+
 		typename map<int,T>::const_iterator i=p1.m_map_coef.begin();
 		typename map<int,T>::const_iterator j=p2.m_map_coef.begin();
 
-		while(i!=p1.m_map_coef.end() && j!=p2.m_map_coef.end()){
-			//Cas ou les deux puissances n'ont pas de coeff
-			if(i->second ==0 && j->second ==0){
-				p_difference.m_map_coef[i->first] = 0;
+		if(i_d->first == j_d->first){
+			while(i!=p1.m_map_coef.end() && j!=p2.m_map_coef.end()){
+				//Cas ou les deux puissances n'ont pas de coeff
+				if(i->second ==0 && j->second ==0){
+					p_difference.m_map_coef[i->first] = 0;
+				}
+				//Cas ou le premier polynome n'a pas cette puissance et le deuxieme existe
+				else if(i->second == 0 && j->second!=0){
+					p_difference.m_map_coef[i->first] = j->second;
+				}
+				//Cas ou le premier polynome a cette puissance et le deuxieme non
+				else if(i->second != 0 && j->second==0){
+					p_difference.m_map_coef[i->first] = i->second;
+				}
+				//Cas ou les deux puissances ont un coeff non nul
+				else{
+					p_difference.m_map_coef[i->first] = i->second-j->second;
+				}
+				i++;
+				j++;
 			}
-			//Cas ou le premier polynome n'a pas cette puissance et le deuxieme existe
-			else if(i->second == 0 && j->second!=0){
-				p_difference.m_map_coef[i->first] = j->second;
-			}
-			//Cas ou le premier polynome a cette puissance et le deuxieme non
-			else if(i->second != 0 && j->second==0){
-				p_difference.m_map_coef[i->first] = i->second;
-			}
-			//Cas ou les deux puissances ont un coeff non nul
-			else{
-				p_difference.m_map_coef[i->first] = i->second-j->second;
-			}
-			i++;
-			j++;
 		}
 
-		//A ce stade dans le cas ou un des deux polynomes a un ordre de grandeur plus grand
-		if(i->first<j->first){
-			for(j;j!=p2.m_map_coef.end();j++){
-				if(j->second<0){
+		else if(i_d->first<j_d->first){
+			for(;i!=p1.m_map_coef.end();i++){
+				if(i->second ==0 && j->second ==0){
+					p_difference.m_map_coef[i->first] = 0;
+				}
+				//Cas ou le premier polynome n'a pas cette puissance et le deuxieme existe
+				else if(i->second == 0 && j->second!=0){
+					p_difference.m_map_coef[i->first] = j->second;
+				}
+				//Cas ou le premier polynome a cette puissance et le deuxieme non
+				else if(i->second != 0 && j->second==0){
+					p_difference.m_map_coef[i->first] = i->second;
+				}
+				//Cas ou les deux puissances ont un coeff non nul
+				else{
+					p_difference.m_map_coef[i->first] = i->second-j->second;
+				}
+				j++;
+			}
+			for(;j!=p2.m_map_coef.end();j++){
 					p_difference.m_map_coef[j->first] =  0-j->second;
-				}
-				else{
-					p_difference.m_map_coef[j->first] = j->second;
-
-				}
+				
 			}
 		}
-		else if(i->first>j->first){
-			for(i;i!=p1.m_map_coef.end();i++){
-				if(i->second<0){
-					p_difference.m_map_coef[i->first] =0-i->second;
+		else if(i_d->first>j_d->first){
+
+			for(;j!=p2.m_map_coef.end();i++){
+				if(i->second ==0 && j->second ==0){
+					p_difference.m_map_coef[i->first] = 0;
 				}
+				//Cas ou le premier polynome n'a pas cette puissance et le deuxieme existe
+				else if(i->second == 0 && j->second!=0){
+					p_difference.m_map_coef[i->first] = j->second;
+				}
+				//Cas ou le premier polynome a cette puissance et le deuxieme non
+				else if(i->second != 0 && j->second==0){
+					p_difference.m_map_coef[i->first] = i->second;
+				}
+				//Cas ou les deux puissances ont un coeff non nul
 				else{
+					p_difference.m_map_coef[i->first] = i->second-j->second;
+				}
+				j++;
+			}
+
+			for(;i!=p1.m_map_coef.end();i++){				
 					p_difference.m_map_coef[i->first] = i->second;
 
-				}
 			}
 
 		}
@@ -160,6 +227,7 @@ public:
 		return p_difference;
 	}
 	
+	//Surcharge operator * avec deux polynomes
 	friend Polynome operator*(const Polynome& p1, const Polynome& p2){
 		Polynome<T> p_produit;
 		typename map<int,T>::const_iterator i; //iterateur de p1
@@ -171,67 +239,39 @@ public:
 			}
 		}
 
+		return p_produit;
+	}
+
+	//Surcharge operator * avec un scalaire et un polynome
+	friend Polynome operator*(const T& c, const Polynome& p1){
+		Polynome<T> p_produit;
+		typename map<int,T>::const_iterator i; //iterateur de p1
+
+		for(i=p1.m_map_coef.begin();i!=p1.m_map_coef.end();i++){
+				p_produit.m_map_coef[i->firstt] = (c*i->second);
+		}
+
 
 		return p_produit;
 	}
 
-	Polynome operator+=(const Polynome& p) const;
+
+	Polynome operator+=(const Polynome& p) {
+		//Appel la surcharge operator+
+		*this = *this + p;
+        return *this;
+	}
+	
 	Polynome operator-=(const Polynome& p) {
-		typename map<int,T>::const_iterator i=this->m_map_coef.begin();
-		typename map<int,T>::const_iterator j=p.m_map_coef.begin();
 
-		while(i!=this->m_map_coef.end() && j!=p.m_map_coef.end()){
-			//Cas ou les deux puissances n'ont pas de coeff
-			if(i->second ==0 && j->second ==0){
-				this->m_map_coef[i->first] = 0;
-			}
-			//Cas ou le premier polynome n'a pas cette puissance et le deuxieme existe
-			else if(i->second == 0 && j->second!=0){
-				this->m_map_coef[i->first] = j->second;
-			}
-			//Cas ou le premier polynome a cette puissance et le deuxieme non
-			else if(i->second != 0 && j->second==0){
-				this->m_map_coef[i->first] = i->second;
-			}
-			//Cas ou les deux puissances ont un coeff non nul
-			else{
-				this->m_map_coef[i->first] = i->second-j->second;
-			}
-			i++;
-			j++;
-		}
-
-		//A ce stade dans le cas ou un des deux polynomes a un ordre de grandeur plus grand
-		if(i->first<j->first){
-			for(j;j!=p.m_map_coef.end();j++){
-				if(j->second<0){
-					this->m_map_coef[j->first] =  0-j->second;
-				}
-				else{
-					this->m_map_coef[j->first] = j->second;
-
-				}
-			}
-		}
-		else if(i->first>j->first){
-			for(i;i!=this->m_map_coef.end();i++){
-				if(i->second<0){
-					this->m_map_coef[i->first] =0-i->second;
-				}
-				else{
-					this->m_map_coef[i->first] = i->second;
-
-				}
-			}
-
-		}
+		//Appel la surcharge operator-
+		*this = *this - p;
 
 		return *this;
 
 	}
 
 	Polynome operator*=(const Polynome& p) {
-		cout<<"surcharge *="<<endl;
 		map<int,T> tmp_map;
 		typename map<int,T>::const_iterator i; //iterateur de this
 		typename map<int,T>::reverse_iterator fin = m_map_coef.rbegin();
@@ -243,11 +283,7 @@ public:
 		}
 
 		T tmp =0;
-		cout<<"this : "<<*this<<endl;
-		cout<<"p2 : "<<p<<endl;
-		cout<<"dernier element :"<<last<<endl;
 		for(i=this->m_map_coef.begin();i->first!=last+1;i++){
-			cout<<"this["<<i->first<<"] = "<<tmp_map[i->first];
 			tmp = tmp_map[i->first];
 			for(j=p.m_map_coef.begin();j!=p.m_map_coef.end();j++){
 				if(i->first == 0){			
@@ -265,8 +301,6 @@ public:
 
 		return *this;
 	}
-
-
 
 	//Destructeur
 	~Polynome();
@@ -294,47 +328,19 @@ Polynome<T>::Polynome(const vector<T>& tab){
 	for (int i = 0; i<tab.size();i++){
 		m_map_coef[i] = tab[i];
 	}
-	
 
-/** Affiche test
-    for(it = m_map_coef.begin(); it != m_map_coef.end(); it++)
-    {
-    	if(it->second!=0){
-	        cout<<"tab["<<it->first<<"] ="<<it->second<<endl;
-    	}
-    }
-**/
 }
 
 //Constructeur surchargé : par map
 template <typename T>
 Polynome<T>::Polynome(const map<int,T>& m_cp):m_map_coef(m_cp){
-	cout<<"TEST surcharge map"<<endl;
-	typename map<int, T>::const_iterator it;
 
- 	for(it = m_map_coef.begin(); it != m_map_coef.end(); it++)
-    {
-    	if(it->second!=0){
-	        cout<<"m_map_coef["<<it->first<<"] = "<<it->second<<endl;
-	        
-    	}
-    }
 }
 
 //Constructeur de copie
 template <typename T>
 Polynome<T>::Polynome(const Polynome<T>& p):m_map_coef(p.m_map_coef){
-		cout<<"TEST Constructeur copie"<<endl;
 
- 	typename map<int, T>::const_iterator it;
-
- 	for(it = m_map_coef.begin(); it != m_map_coef.end(); it++)
-    {
-    	if(it->second!=0){
-	        cout<<"m_map_coef2["<<it->first<<"] = "<<it->second<<endl;
-	        
-    	}
-    }
 }
 
 /*===================
@@ -347,19 +353,14 @@ map<int,T>& Polynome<T>::getMap(){
 	return m_map_coef;
 }
 
-/*=====================
-====   SURCHARGES   ===
-=======================*/
-
 /*===================
 ===   FONCTIONS   ===
 =====================*/
 
 template <typename T>
 T Polynome<T>::evaluer(T& x) {
-	Polynome<T> n_poly;
-	T z;
-	T res=0;
+	T z; //garde le resultat de x a la puissance k
+	T res=0; //resultat final
 	typename map<int,T>::const_iterator it;
 	for(it = this->getMap().begin(); it!=this->getMap().end();it++){
 		z = pow(x,it->first);
@@ -377,7 +378,7 @@ T Polynome<T>::evaluer(T& x) {
 template <typename T>
 Polynome<T> Polynome<T>::deriver() {
 	Polynome<T> n_poly;
-	T d;
+	T d; //resultat de la derive de chaque fonction
 	typename map<int,T>::const_iterator it;
 
 	for(it = m_map_coef.begin(); it!=m_map_coef.end();it++){
@@ -387,6 +388,53 @@ Polynome<T> Polynome<T>::deriver() {
 
 	return n_poly;
 }
+
+template <typename T>
+Polynome<T> Polynome<T>::divisionEuclidienne(const Polynome& p) const{
+
+	Polynome<T> quotient;
+	Polynome<T> reste;
+
+	typename map<int,T>::const_reverse_iterator i = this->m_map_coef.rbegin(); //iterateur de p1
+	typename map<int,T>::const_reverse_iterator j = p.m_map_coef.rbegin(); //iterateur de p2
+
+	if(j->first == 0 && j->second == 0){
+		throw domain_error("Division par zero");
+	}
+
+	int degre_A = i->first;
+	int degre_B = j->first;
+
+	if(degre_A<degre_B){
+		throw domain_error("Division impossible");
+	}
+
+	else if(degre_A == degre_B){
+		quotient.m_map_coef[0] = i->second/j->second;
+		T tmp = i->second/j->second; //retient le coef
+		for(;i!=this->m_map_coef.rend();i++){
+			reste.m_map_coef[i->first] = i->second-(tmp*j->second);
+			j++;
+		}
+	}
+
+	else{
+		for(;i!=this->m_map_coef.rend();i++){
+			int p = i->first - j->first;
+			T c_p = i->second/j->second;
+
+			reste.m_map_coef[i->first - p] = i->second-(c_p*j->second);
+
+			quotient.m_map_coef[p] = c_p;
+			j++;
+		}
+	}
+
+	cout<<"A = BQ+R <=> "<<*this<<" = "<<p<<"."<<quotient<<" + "<<reste<<endl;
+
+	return quotient;
+}
+
 
 //Destructeur
 template <typename T>
