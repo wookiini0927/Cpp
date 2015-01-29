@@ -98,41 +98,37 @@ public:
 
 	    if(i_d->first == j_d->first){
 
-	    while (i != p1.m_map_coef.end() && j != p2.m_map_coef.end())
-        {
-           	if (i->second == 0 && j->second == 0)
-            {
-                p_somme.m_map_coef[i->first] = 0;
-            }
-            else if (i->second == 0 && j->second != 0)
-            {
-                p_somme.m_map_coef[i->first] = j->second;
-            }
-            else if (i->second != 0 && j->second == 0)
-            {
-                p_somme.m_map_coef[i->first] = i->second;
-            }
-            else
-            {
-                p_somme.m_map_coef[i->first] = i->second + j->second;
-            }
-            i++;
-            j++;
+		    while (i != p1.m_map_coef.end() && j != p2.m_map_coef.end())
+	        {
+	        
+	            p_somme.m_map_coef[i->first] = i->second + j->second;
+	         
+	            i++;
+	            j++;
+	        }
+    	}
 
-            cout<<i->first<<","<<j->first<<endl;
-        }
-    }
-
-        if (i->first-1 < j->first-1)
+		else if(i_d->first<j_d->first)
         {
+        	for(;i!=p1.m_map_coef.end();i++){
+        		p_somme.m_map_coef[i->first] = i->second + j->second;
+        		j++;
+        	}
+
             for (;j != p2.m_map_coef.end(); j++)
             {
                 p_somme.m_map_coef[j->first] = j->second;
             }
         }
-        else if (i->first-1 > j->first-1)
+
+		else if(i_d->first>j_d->first)
         {
-            for (;i != p2.m_map_coef.end(); i++)
+        	for(;j!=p2.m_map_coef.end();j++){
+        		p_somme.m_map_coef[j->first] = i->second + j->second;
+        		i++;
+        	}
+
+            for (;i != p1.m_map_coef.end(); i++)
             {
                 p_somme.m_map_coef[i->first] = i->second;
             }
